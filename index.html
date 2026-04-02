@@ -672,24 +672,25 @@ async function generarApartado() {
   btn.disabled = true;
   btn.textContent = 'Guardando...';
 
-  const { data, error } = await db.from('apartados').insert([{
-    cliente, articulo,
-    valor_pieza: valor || null,
-    monto,
+  const { error: insertError } = await db.from('apartados').insert([{
+    cliente: cliente, articulo: articulo,
+    valor_pieza: valor ? parseFloat(valor) : null,
+    monto: parseFloat(monto),
     fecha_apartado: fechaApartado,
     fecha_limite: fechaLimite,
     creado_en: new Date().toISOString()
-  }]).select();
+  }]);
 
   btn.disabled = false;
   btn.textContent = 'Generar Comprobante';
 
-  if (error) {
-    alert('Error al guardar: ' + error.message);
+  if (insertError) {
+    alert('Error al guardar: ' + insertError.message);
     return;
   }
 
-  const id = data[0].id;
+  const { data: fetchData } = await db.from('apartados').select('id').eq('cliente', cliente).order('creado_en', { ascending: false }).limit(1);
+  const id = fetchData[0].id;
   const baseUrl = window.location.origin + window.location.pathname;
   currentLink = baseUrl + '?apartado=' + id;
 
